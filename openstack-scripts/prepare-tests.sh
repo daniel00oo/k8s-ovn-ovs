@@ -63,6 +63,50 @@ function populate-kube-env () {
     sed -i "s/KUBE_TEST_REPO_LIST=/&\/home\/ubuntu\/run-e2e\/repo-list.yaml/" run-e2e/kube-env
 }
 
+
+function started() {
+    local TIME=`date +%s`
+    local GIT_VERSION=`git --version`
+    #local PULL_REFS=1
+
+    # making sure the tmp file is empty
+    echo "" > tmp.json
+    # fill it with the necessary info
+    echo "{" >> tmp.json
+    echo "\"timestamp\": $TIME," >> tmp.json
+    echo "\"pull\": \"$PULL_REFS from the run\"," >> tmp.json
+    echo "\"repos\": {" >> tmp.json
+    echo "\"org/repo\": \"$GIT_VERSION\"" >> tmp.json
+    echo "}" >> tmp.json
+    echo "}" >> tmp.json
+
+    jq . tmp.json > started.json
+    rm tmp.json
+}
+
+function finished() {
+    local TIME=`date +%s`
+    local METADATA=$(cat artifacts/metadata.json)
+
+    # make sure the temporary file is empty
+    echo "" > tmp.json
+    # fill it with the necessary info
+    echo "{" >> tmp.json
+    echo "\"timestamp\": $TIME," >> tmp.json
+    if [[ $RESULT -eq 0 ]]; then
+        echo "\"result\": \"SUCCESS\"," >> tmp.json
+    else
+        echo "\"result\": \"FAILURE\"," >> tmp.json
+    fi
+    echo "\"metadata\": $METADATA" >> tmp.json
+    echo "}" >> tmp.json
+
+    # sending it to the final file
+    jq . tmp.json > finished.json
+    # removing the temporary file
+    rm tmp.json
+}
+
 function start-tests () {
     pushd run-e2e
         set -x
@@ -105,7 +149,9 @@ function main () {
     install-bazel
     build-kubetest
     populate-kube-env
+    started
     start-tests
+    finished
 }
 
 main "$@"
