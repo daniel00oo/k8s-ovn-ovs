@@ -69,7 +69,8 @@ function started() {
     local GIT_VERSION=`git --version`
     #local PULL_REFS=1
 
-    # making sure the tmp file is empty
+    # making sure the tmp file exists and is empty
+    touch tmp.json
     echo "" > tmp.json
     # fill it with the necessary info
     echo "{" >> tmp.json
@@ -88,7 +89,8 @@ function finished() {
     local TIME=`date +%s`
     local METADATA=$(cat artifacts/metadata.json)
 
-    # make sure the temporary file is empty
+    # make sure the temporary file exists and is empty
+    touch tmp.json
     echo "" > tmp.json
     # fill it with the necessary info
     echo "{" >> tmp.json
@@ -114,11 +116,11 @@ function start-tests () {
         export KUBECTL_PATH=$(which kubectl)
         focus=$(cat focus)
         skip=$(cat skip)
-        mkdir -p results
+        mkdir -p $HOME/results
         pushd kubernetes
             kubetest --ginkgo-parallel=4 --verbose-commands=true --provider=local --test \
-                --test_args="--ginkgo.dryRun=false --ginkgo.focus=$(eval $focus) --ginkgo.skip=$(eval $skip)" --dump=../results/ \
-                | tee ../results/kubetest.log
+                --test_args="--ginkgo.dryRun=false --ginkgo.focus=$(eval $focus) --ginkgo.skip=$(eval $skip)" --dump=$HOME/results/ \
+                | tee $HOME/results/kubetest.log
         popd
     popd
 }
